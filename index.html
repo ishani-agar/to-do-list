@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>Weekly Focus Planner</title>
+
+    <style>
+        body {
+            font-family: system-ui;
+            background: #0f172a;
+            color: #f8fafc;
+            max-width: 520px;
+            margin: auto;
+            padding: 20px;
+        }
+
+        h1,
+        h2 {
+            text-align: center;
+        }
+
+        .task {
+            background: #1e293b;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 10px;
+        }
+
+        .done {
+            background: #5089c5;
+            text-decoration: line-through;
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            margin-top: 10px;
+            border: none;
+            border-radius: 8px;
+            background: #2563eb;
+            color: white;
+            font-size: 15px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+
+<body>
+
+    <h1>Weekly Focus</h1>
+    <h2 id="dayTitle"></h2>
+
+    <div id="tasks"></div>
+
+    <button onclick="nextDay()">Next Day →</button>
+
+    <script>
+        const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+
+        // REAL WEEK STRUCTURE
+        const WEEK_TEMPLATE = {
+            "Monday": [
+                { time: "14:30", title: "Study Important Subject" },
+                { time: "16:30", title: "Study Important Subject" },
+                { time: "17:30", title: "Personal Growth" },
+                { time: "19:00", title: "Revision" }
+            ],
+            "Tuesday": [
+                { time: "14:30", title: "Study Important Subject" },
+                { time: "16:30", title: "Study Medium Subject" },
+                { time: "17:30", title: "Personal Growth" },
+                { time: "19:00", title: "Revision" }
+            ],
+            "Wednesday": [
+                { time: "14:30", title: "Study Important Subject" },
+                { time: "16:30", title: "Study Medium Subject" },
+                { time: "17:30", title: "Personal Growth" },
+                { time: "19:00", title: "Revision" }
+            ],
+            "Thursday": [
+                { time: "14:30", title: "Study Important Subject" },
+                { time: "16:30", title: "Study Important Subject" },
+                { time: "17:30", title: "Personal Growth" },
+                { time: "19:00", title: "Light Revision" }
+            ],
+            "Friday": [
+                { time: "10:00", title: "Personal Growth" },
+                { time: "17:00", title: "Light Revision / Planning" }
+            ],
+            "Saturday": [
+                { time: "10:00", title: "Personal Growth" },
+                { time: "17:00", title: "Optional Revision" }
+            ],
+            "Sunday": [
+                { time: "09:30", title: "Light Study / Prep" },
+                { time: "12:00", title: "College Classes (12–6)" },
+                { time: "18:30", title: "Revision / Notes" },
+                { time: "20:00", title: "Personal Growth" }
+            ]
+        };
+
+        // LOAD OR INIT
+        let state = JSON.parse(localStorage.getItem("weeklyFocus")) || {
+            dayIndex: 0,
+            week: DAYS.map(day =>
+                WEEK_TEMPLATE[day].map(t => ({ ...t, done: false }))
+            )
+        };
+
+        function render() {
+            const day = DAYS[state.dayIndex];
+            document.getElementById("dayTitle").innerText = day;
+
+            const box = document.getElementById("tasks");
+            box.innerHTML = "";
+
+            state.week[state.dayIndex].forEach((t, i) => {
+                const div = document.createElement("div");
+                div.className = "task" + (t.done ? " done" : "");
+                div.innerHTML = `
+      <strong>${t.time}</strong><br>
+      ${t.title}
+      <button onclick="markDone(${i})">Done</button>
+    `;
+                box.appendChild(div);
+                notify(t);
+            });
+
+            save();
+        }
+
+        function markDone(i) {
+            state.week[state.dayIndex][i].done = true;
+            save();
+            render();
+        }
+
+        function nextDay() {
+            state.dayIndex = (state.dayIndex + 1) % 7;
+            render();
+        }
+
+        function save() {
+            localStorage.setItem("weeklyFocus", JSON.stringify(state));
+        }
+
+        // NOTIFICATIONS
+        function notify(task) {
+            if (Notification.permission !== "granted") {
+                Notification.requestPermission();
+                return;
+            }
+            if (!task.time.includes(":")) return;
+
+            const [h, m] = task.time.split(":");
+            const now = new Date();
+            const n = new Date();
+            n.setHours(h, m, 0, 0);
+
+            if (n > now) {
+                setTimeout(() => {
+                    new Notification("Focus Time", { body: task.title });
+                }, n - now);
+            }
+        }
+
+        render();
+    </script>
+
+</body>
+
+</html>
